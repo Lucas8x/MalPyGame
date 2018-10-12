@@ -6,3 +6,5 @@ Apenas um exercicio para aprendizado
 * lxml
 
 ## Uso
+Coloque suas informações de login e senha no payload
+e seu nome de usuário no 'lastuser'
