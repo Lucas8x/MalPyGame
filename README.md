@@ -1,5 +1,5 @@
 # MalPyGame
-Apenas um exercicio para aprendizado.
+Apenas um exercício para aprendizado.
 
 ## Requerimentos
 * Python 3
