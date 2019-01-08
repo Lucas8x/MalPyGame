@@ -70,7 +70,7 @@ else:
     print("GET Response: ", r.status_code, r.reason)
     print("Cookies: ", mycookies)
 
-    calc = str(calc)
+    calc = str(calc) #transforma inteiro em string
 
     #
 
