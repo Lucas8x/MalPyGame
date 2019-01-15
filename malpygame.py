@@ -4,9 +4,6 @@ from requests import session
 
 # import myanimelist.session
 import re
-#from robobrowser import RoboBrowser
-
-# import urllib, urllib2, cookielib
 
 #from selenium import webdriver
 #from selenium.webdriver.common.by import By
@@ -17,9 +14,6 @@ import re
 import time
 # import threading
 # import sched, time
-
-# import string
-# from BeautifulSoup import  BeautifulSoup
 
 import locale
 locale.setlocale(locale.LC_ALL, '')
