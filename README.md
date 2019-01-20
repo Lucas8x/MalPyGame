@@ -6,6 +6,3 @@ Apenas um exercício para aprendizado.
 * lxml
 
 ## Uso
-Ainda não Funcional.
-
-Coloque suas informações de login e senha no payload
