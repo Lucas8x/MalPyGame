@@ -1,113 +1,82 @@
 from lxml import html
 import requests
-from requests import session
-
 # import myanimelist.session
-import re
-
-#from selenium import webdriver
-#from selenium.webdriver.common.by import By
-#from selenium.webdriver.support.ui import WebDriverWait
-#from selenium.webdriver.support import expected_conditions as EC
-
-# import schedule
+import os
 import time
-# import threading
-# import sched, time
-
+from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+import pickle
 import locale
 locale.setlocale(locale.LC_ALL, '')
 
-topic = requests.get('https://myanimelist.net/forum/?topicid=1731980&goto=lastpost')
-tree = html.fromstring(topic.content)
-users = tree.xpath('//*[@style="padding-bottom: 2px;"]/a/strong/text()')
-# post = tree.xpath('//*[@class="clearfix"]/text()')
-post = tree.xpath('//*[contains(@id,"message")]/text()')
-
-print("\nUsers: ", users)
-print("\nLast User: ", users[-1])
-lastuser = users[-1] = str(users[-1])
-print("\nPosts: ", post)
-
-# melhorar o filtro #
-#filt = [ x for x in post if x.isdigit() ]
-filt = ''.join(filter(lambda x: x in '0123456789', str(post)))  #deixa apenas os números
-filt = [filt[i:i + 3] for i in range(0, len(filt), 3)]  #organiza em grupos de 3
-
-print("\nFilter:", filt)
-print("\nLast Post: ", filt[-1])
-calc = filt[-1] = int(filt[-1])-1 #-1 to Female +1 to Male
-print("Calculation:", calc)
+options = Options()
+options.headless = False
+firefox_capabilities = DesiredCapabilities.FIREFOX
+firefox_capabilities['marionette'] = True
+driver = webdriver.Firefox(options=options, executable_path='./geckodriver.exe', capabilities=firefox_capabilities)
 
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
-
-# login_url = 'https://myanimelist.net/login.php?from=%2F'
 login_url = 'https://myanimelist.net/login.php'
+thread = 'https://myanimelist.net/forum/?topicid=1755755&goto=lastpost'
 
-payload = {'user_name': '',
-           'password': '',
-           'cookie': '1',
-           'sublogin': 'Login',
-           'submit': '1',
-           'csrf_token': ''}
+def check():
+  topic = requests.get(thread)
+  tree = html.fromstring(topic.content)
+  users = tree.xpath('//*[@style="padding-bottom: 2px;"]/a/strong/text()')
+  # post = tree.xpath('//*[@class="clearfix"]/text()')
+  post = tree.xpath('//*[contains(@id,"message")]/text()')
 
-action_url = 'https://myanimelist.net/forum/?action=message&topic_id=1731980'
+  #print("\nUsers: ", *users)
+  #print("\nLast User: ", users[-1])
+  print("Posts: ", *post)
 
-print("\nChecking if last user is you...")
-if (lastuser == 'username'):
-    print("Yes, it's you", lastuser, "nothing will happen")
-else:
-    print("Itsn't, trying post...\n")
-    r = requests.Session()
-    r = requests.get("https://myanimelist.net/login.php", data=payload , headers={'User-Agent': user_agent})
-    mycookies = r.cookies.get_dict()
-    print("GET Response: ", r.status_code, r.reason)
-    print("Cookies: ", mycookies)
+  # filt = [ x for x in post if x.isdigit() ]
+  filt = ''.join(filter(lambda x: x in '0123456789', str(post)))
+  filt = [filt[i:i + 3] for i in range(0, len(filt), 3)]
 
-    calc = str(calc) #transforma inteiro em string
+  print("Filter:", *filt)
+  print("Last Post: ", filt[-1])
+  calc = filt[-1] = int(filt[-1]) - 1
+  print("Calculation:", calc)
 
-    #
+  if not (os.path.exists('./cookies.pkl')):
+    driver.get(login_url)
+    username = ""
+    password = ""
+    #driver.find_element_by_css_selector('body > div.root > div > div.modal-wrapper > div > button').click()
+    #driver.find_element_by_xpath('//button data-v-4e7046d6')
+    #driver.find_element_by_xpath('//button[contains("OK")')
+    driver.find_element_by_class_name("text").click()
+    ActionChains(driver).send_keys(Keys.TAB).perform()
+    ActionChains(driver).send_keys(Keys.TAB).perform()
+    ActionChains(driver).send_keys(Keys.ENTER).perform()
+    driver.find_element_by_id("loginUserName").send_keys(username)
+    driver.find_element_by_id("login-password").send_keys(password)
+    ActionChains(driver).send_keys(Keys.ENTER).perform()
+    time.sleep(5)
+    pickle.dump(driver.get_cookies(), open("./cookies.pkl", "wb"))
+  driver.get(thread)
+  for cookie in pickle.load(open("./cookies.pkl", "rb")):
+    driver.add_cookie(cookie)
+  driver.get(thread)
 
-    # msg = {'action': 'message', 'topic_id': '1731980', 'csrf_token': '', 'msg_text': calc , 'submit': 'Submit'}
-    #msg = {'msg_text': calc, 'submit': 'Submit', 'board_id':'','subboard_id':'', 'csrf_token': ''}
-    msg = {'msg_text': calc}
+  lastuser = users[-1] = str(users[-1])
+  print("\nChecking if last user is you...")
+  if (lastuser == ""):
+      print("Yes, it's you", lastuser, "nothing will happen")
+  else:
+      print("Its not, trying post...\n")
+      driver.get(thread)
+      driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+      driver.find_element_by_id('showQuickReply').click()
+      driver.find_element_by_id("messageText").send_keys(calc)
+      driver.find_element_by_id('postReply').click()
 
-    msgT2 = {'topicId': '1731980', 'messageText': calc, 'csrf_token': ''}
-    quickReply = {'messageText': calc}
-
-    getactionpag = {'action': 'message','topic_id': '1731980'}
-    time.sleep(1)
-
-    # r = requests.post('https://myanimelist.net/forum/?topicid=1731980', data=quickReply)
-    # r = requests.post('https://myanimelist.net/includes/ajax.inc.php?t=82', data=quickReply)
-
-    #r = requests.get("https://myanimelist.net/forum/?action=message&topic_id=1731980", data=getactionpag , cookies=mycookies , headers={'User-Agent': user_agent})
-    r = requests.post("https://myanimelist.net/forum/?action=message&topic_id=1731980", data=msg , cookies=mycookies , headers={'User-Agent': user_agent})
-
-    #r = requests.post("https://myanimelist.net/includes/ajax.inc.php?t=82", data=msgT2)
-
-    print("POST Response:", r.status_code, r.reason)
-
-# print last post again
-# topic = requests.get('https://myanimelist.net/forum/?topicid=1731980&goto=lastpost')
-# tree = html.fromstring(topic.content)
-# post = tree.xpath('//*[contains(@id,"message")]/text()')
-# print("\nLast Post: ", post[-1])
-
-# cookie to check = is_logged_in = 1
-
-
-
-
-
-
-# dump things
-
-# session = myanimelist.session.Session(username="username", password="mal_password")
-# session.login()
-
-# session_requests = requests.session()
-# result = session_requests.get(login_url)
-# payload = {'user_name': 'myusername','password': 'mypassword'}
-# result = session_requests.post(login_url, data=payload, headers={'User-Agent': user_agent})
-# print ("\n", result)
+if __name__ == "__main__":
+  repeat = True
+  while repeat == True:
+    check()
+    time.sleep(30)
